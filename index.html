@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Piecemeal</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      .list-group{
+      max-height: 500px;
+      margin-bottom: 10px;
+      overflow:scroll;
+      -webkit-overflow-scrolling: touch;}
+    </style>
+  </head>
+  <body>
+    <div id="application"/>
+  </body>
+  <!-- Include Scala.js compiled code -->
+  <script type="text/javascript" src="./target/scala-2.12/piecemeal-jsdeps.js"></script>
+  <script type="text/javascript" src="./target/scala-2.12/piecemeal-fastopt.js"></script>
+</html>
