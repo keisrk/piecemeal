@@ -3,6 +3,7 @@ package piecemeal.scene
 import io.udash._
 import piecemeal.facade.twgl.{M4, Primitives}
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.typedarray.Float32Array
 
 trait Description {
@@ -10,12 +11,6 @@ trait Description {
   def getSceneTree: SceneTree
   def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)]
 }
-abstract class Work(id: String) extends Description {
-  def majorVertices: js.Dynamic
-  def getSceneTree: SceneTree = Leaf()
-  def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)]
-}
-
 case class Environment(id:String = "Environment", children: js.Array[Actuator]) extends Description {
   private val majorSt = Node()
   private val entryPoint = PlaceHolder("entry_point")
@@ -48,10 +43,12 @@ trait Actuator {
 }
 
 abstract class Cylinder extends Actuator {
+  /* Subclass may take these parameters. */
   def id: String
   def location: Float32Array
   def children: js.Array[Actuator]
 
+  /* Subclass determines the following properties. */
   def rangePerCycle: Double
   def tikPerCycle: Int
   def increment: Float32Array
@@ -59,6 +56,7 @@ abstract class Cylinder extends Actuator {
   def majorVertices: js.Dynamic
   def minorVertices: js.Dynamic
 
+  /* Class instantiation. */
   private val majorSt = Node()
   private val minorSt = Node()
   majorSt.updateLocalMatrix(location)
@@ -82,7 +80,6 @@ abstract class Cylinder extends Actuator {
       (minorVertices, minorSt.worldMatrix))
   }
 }
-
 case class DefaultCylinder(id: String, location: Float32Array, children: js.Array[Actuator])
     extends Cylinder {
   def rangePerCycle = 1.0
@@ -97,11 +94,13 @@ case class DefaultCylinder(id: String, location: Float32Array, children: js.Arra
 }
 
 abstract class ServoMotor extends Actuator {
+  /* A subclass may take these parameters. */
   def id: String
   def location: Float32Array
   def positions: js.Array[Double]
   def children: js.Array[Actuator]
 
+  /* A subclass determines the following properties. */
   def rangePerCycle: Double
   def tikPerCycle: Int
   def increment: Float32Array
@@ -109,6 +108,7 @@ abstract class ServoMotor extends Actuator {
   def majorVertices: js.Dynamic
   def minorVertices: js.Dynamic
 
+  /* Class instantiation. */
   private val countPerTik = 1.0 / tikPerCycle.toDouble
   private val shiftPositions: js.Array[Double] = positions.map((i: Double) => i / rangePerCycle.toDouble)
   private val majorSt = Node()
@@ -147,7 +147,15 @@ case class DefaultServoMotor(id: String, location: Float32Array, positions: js.A
   def minorVertices = Primitives.createCubeVertices()
 }
 
-abstract class PickAndPlace(id: String, location: Float32Array) extends Actuator {
+abstract class PickAndPlace extends Actuator {
+  /* A subclass may take these parameters. */
+  def id: String
+  def location: Float32Array
+
+  /* A subclass determines the following properties. */
+  def majorVertices: js.Dynamic
+
+  /* Class instantiation. */
   val children: js.Array[Actuator] = js.Array()
   private val majorSt = Node()
   private val minorSt = PlaceHolder(id)
@@ -156,9 +164,6 @@ abstract class PickAndPlace(id: String, location: Float32Array) extends Actuator
 
   private val stepInit = Init(id + "_init", minorSt)
 
-  def majorVertices: js.Dynamic
-
-  def getPlaceHolder: PlaceHolder = minorSt
   def getSceneTree: SceneTree = majorSt
   def getSteps: js.Array[Step] = js.Array(stepInit)
   def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = {
@@ -166,10 +171,56 @@ abstract class PickAndPlace(id: String, location: Float32Array) extends Actuator
       (majorVertices, majorSt.worldMatrix))
   }
 }
-case class DefaultPickAndPlace(id: String, location: Float32Array) extends PickAndPlace(id, location) {
+case class DefaultPickAndPlace(id: String, location: Float32Array) extends PickAndPlace {
   def majorVertices = Primitives.createCubeVertices(0.1)
 }
-case class Queue(id: String, location: Float32Array, slots: Int) extends Actuator {
+
+abstract class Conveyor extends Actuator {
+  /* A subclass may take these parameters. */
+  def id: String
+  def location: Float32Array
+  def slots: Int
+
+  /* A subclass determines the following properties. */
+  def margin: Double
+  def counterPerTik: Double
+  def increment: Float32Array
+  def majorVertices: js.Dynamic
+
+  /* Class instantiation. */
+  val children: js.Array[Actuator] = js.Array()
+  val majorSt = Node()
+  majorSt.updateLocalMatrix(location)
+
+  val middleSt = Node()
+  middleSt.setParent(majorSt)
+
+  val phs = for (i <- 0 until (slots)) yield {
+    val index = if (i == 0) id ++ "_input"
+    else if (i == slots -1) id ++ "_output"
+    else id ++ "_slot" ++ i.toString
+    PlaceHolder(index)
+  }
+  for (i <- 0 until slots) phs(i).updateLocalMatrix(M4.translation(js.Array(margin * i, 0.0, 0.0)))
+  for (i <- 0 until (slots -1)) phs(i).setParent(middleSt)
+  phs(slots -1).setParent(majorSt)
+  val steps = (for (i <- 0 until (slots -1)) yield {
+    (Replace(id ++ "_slot" ++ i.toString, phs(i), phs(i + 1)), On)
+  }).reverse
+
+  val jog: Jog = Jog(id ++ "_jog" , middleSt, counterPerTik, increment)
+  val init: Init = Init(id ++ "_init", middleSt)
+
+  def getSceneTree: SceneTree = majorSt
+  def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = {
+    js.Array(
+      (majorVertices, majorSt.worldMatrix))
+  }
+  def getSteps: js.Array[Step] = js.Array(jog, init,
+    Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
+}
+
+case class DefaultConveyor(id: String, location: Float32Array, slots: Int) extends Actuator {
 
   val children: js.Array[Actuator] = js.Array()
   val majorSt = Node()

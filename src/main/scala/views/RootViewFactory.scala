@@ -27,7 +27,7 @@ class RootViewFactory (
       DefaultServoMotor("my_servo", mgqLoc, js.Array(-1.0, 0.3, 1.2), js.Array(
         DefaultPickAndPlace("my_pnp01", pnp01Loc),
         DefaultPickAndPlace("my_pnp02", pnp02Loc),
-        Queue("my_conv", convLoc, 5),
+        DefaultConveyor("my_conv", convLoc, 5),
       ))
     ))//))
 

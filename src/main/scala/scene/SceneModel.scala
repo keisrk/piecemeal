@@ -204,6 +204,7 @@ case class Shift(id: String, st: SceneTree, countPerTik: Double, positions: js.A
     case _ => Future {true}
   }
 }
+
 case class Replace(id: String, from: PlaceHolder, to: PlaceHolder) extends Step {
   def getId: String = id
   val channel = Channel()
@@ -288,6 +289,7 @@ case class Macro(id: String, steps: js.Array[(Step, Command)]) extends Step {
     } else Future { true }
   }
 }
+
 /*
 Toggle    ON/OFF (cylinder, etc.) defaults to OFF
 Handle    Trig  (suction cup, etc) defaults to OFF
