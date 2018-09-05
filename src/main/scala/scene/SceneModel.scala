@@ -33,22 +33,24 @@ case class Channel(){
 }
 
 trait SceneTree {
-
   def worldMatrix: Float32Array
   def initMatrix(): Unit
   def updateLocalMatrix(m: Float32Array): Unit
   def updateWorldMatrix(pWorldMatrix: Float32Array): Unit
 }
 
-case class Node() extends SceneTree {
+case class Node(private val localMatrix: Float32Array, worldMatrix: Float32Array, children: js.Array[SceneTree]) extends SceneTree {/*
   val children: js.Array[SceneTree] = js.Array()
-  val worldMatrix = M4.identity()
-  private val localMatrix = M4.identity()
+  val worldMatrix = M4.identity()*/
 
   def setParent(p: Node): Unit = {
     p.children.push(this)
   }
-  def initMatrix(): Unit = {M4.identity(localMatrix)}
+  def getSomething[N <: SceneTree](n :N): N = n match {
+    case Node(_, _, _) => n
+    case _ => n
+  }
+  def initMatrix(): Unit = {M4.identity(this.localMatrix)}
 
   def updateLocalMatrix(m: Float32Array): Unit = {
     M4.multiply(this.localMatrix, m, this.localMatrix)
@@ -62,7 +64,9 @@ case class Node() extends SceneTree {
     }
   }
 }
-
+object Node {
+  def apply(): Node = Node(M4.identity(), M4.identity(), js.Array[SceneTree]())
+}
 case class Leaf() extends SceneTree {
   val worldMatrix = M4.identity()
   private val localMatrix = M4.identity()
@@ -206,9 +210,10 @@ case class Shift(id: String, st: SceneTree, countPerTik: Double, positions: js.A
 }
 
 case class Replace(id: String, from: PlaceHolder, to: PlaceHolder) extends Step {
-  def getId: String = id
   val channel = Channel()
   channel.done()
+
+  def getId: String = id
   def tik(): Unit = {}
   def exec(cmd: Command = On): Future[Boolean] = {
     println(from.getId ++ " -> " ++ to.getId)

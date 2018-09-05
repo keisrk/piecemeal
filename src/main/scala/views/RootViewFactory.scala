@@ -45,6 +45,8 @@ class RootViewFactory (
   sceneService.setup(act.getSceneTree)
 
   setup(act)
+  val transducer = Transducer(js.Array(("my_pnp01", "my_conv_input"), ("my_conv_output", "my_pnp02")))
+  for ((from, to) <- transducer.replacements) sceneService.registerReplace(from, to)
   /* --> Experimental */
 
   sceneService.registerStep(Macro("macro",
@@ -62,7 +64,6 @@ class RootViewFactory (
     for ((v, m) <- a.getRenderingInfo) renderingService.register(v, m)
     for (c <- a.children) setup(c)
   }
-
   override def create(): (FinalView, Presenter[RootState.type]) = {
     val presenter = new RootPresenter(model, renderingService, sceneService)
     val view = new RootView(model, presenter)

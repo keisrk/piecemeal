@@ -11,7 +11,14 @@ trait Description {
   def getSceneTree: SceneTree
   def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)]
 }
-case class Environment(id:String = "Environment", children: js.Array[Actuator]) extends Description {
+
+/* Environment consists of Actuator and Transducer. Actuator specifies the
+ * motion for each node in the SceneTree. Transducer specifies the leaf
+ * replacement of the SceneTree */
+
+case class Environment(id:String = "Environment", children: js.Array[Actuator])
+    extends Description {
+
   private val majorSt = Node()
   private val entryPoint = PlaceHolder("entry_point")
   private val endPoint = PlaceHolder("end_point")
@@ -33,7 +40,7 @@ case class Environment(id:String = "Environment", children: js.Array[Actuator]) 
     getRenderingInfo.push((Primitives.createCubeVertices(0.3), work.worldMatrix))
   }
 }
-
+case class Transducer(replacements: js.Array[(String, String)])
 trait Actuator {
   def id: String
   def getSceneTree: SceneTree
@@ -41,10 +48,9 @@ trait Actuator {
   def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)]
   def children: js.Array[Actuator]
 }
-
 abstract class Cylinder extends Actuator {
   /* Subclass may take these parameters. */
-  def id: String
+  def id: String                   
   def location: Float32Array
   def children: js.Array[Actuator]
 
@@ -219,8 +225,17 @@ abstract class Conveyor extends Actuator {
   def getSteps: js.Array[Step] = js.Array(jog, init,
     Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
 }
-
-case class DefaultConveyor(id: String, location: Float32Array, slots: Int) extends Actuator {
+case class DefaultConveyor(id: String, location: Float32Array, slots: Int) extends Conveyor {
+  val margin: Double = 1.5
+  val counterPerTik: Double = 1.0
+  def increment: Float32Array = M4.translation(js.Array(0.015, 0.0, 0.0))
+  def majorVertices: js.Dynamic = {
+    val v = Primitives.createCubeVertices(1.0)
+    Primitives.reorientVertices(v, M4.scaling(js.Array(3.0, 0.1, 0.1)))
+    v
+  }
+}
+case class OldDefaultConveyor(id: String, location: Float32Array, slots: Int) extends Actuator {
 
   val children: js.Array[Actuator] = js.Array()
   val majorSt = Node()

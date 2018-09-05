@@ -1,17 +1,18 @@
-##############################
-Piecemal
-##############################
+##################################################
+Piecemeal_ , a 3D Design Tool on the Browser
+##################################################
 
 TL;DR
 ==============================
 
-Try_ it. Piecemeal is a designing tool for automation and process control, which
-runs on the browser.
+Piecemeal_ is a 3D designing tool for automation and process control, which runs
+on the browser.
 
-.. _Try: http://www.jaist.ac.jp/~s1720013/piecemeal/index.html
+.. _Piecemeal: https://www.jaist.ac.jp/~s1720013/piecemeal/index.html
 
 Why
 ==============================
+
 
 DSL
 ==============================
