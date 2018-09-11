@@ -36,9 +36,12 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
   }
 
   def reset(): Unit = {
+    objectList.clear()
+    /*
     renderingContext = None
     programInfo = None
     uniforms = None
+     */
   }
   /** Get rendering context and saves returned context. */
   def setup(canvas: Canvas): Future[RenderingContext] = {

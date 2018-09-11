@@ -1,5 +1,5 @@
 ##################################################
-Piecemeal_ , a 3D Design Tool on the Browser
+Piecemeal_ is a 3D Designing Tool on the Browser
 ##################################################
 
 TL;DR

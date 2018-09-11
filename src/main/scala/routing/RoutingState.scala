@@ -12,4 +12,5 @@ sealed abstract class ContainerRoutingState(parentState: Option[ContainerRouting
 sealed abstract class FinalRoutingState(parentState: Option[ContainerRoutingState])
   extends RoutingState(parentState) with FinalState
 
-case object RootState extends FinalRoutingState(None)
+case object RootState extends ContainerRoutingState(None)//FinalRoutingState(None)
+case class AnotherState(name: String) extends FinalRoutingState(Some(RootState))

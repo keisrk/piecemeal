@@ -13,6 +13,6 @@ object ApplicationContext {
   val renderService = new RenderingContextService
   val sceneService = new SceneContextService
   val application = new Application[RoutingState](
-    routingRegistry, viewFactoryRegistry, WindowUrlPathChangeProvider
+    routingRegistry, viewFactoryRegistry, WindowUrlFragmentChangeProvider
   )
 }
