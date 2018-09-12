@@ -13,7 +13,7 @@ class RoutingRegistryDef extends RoutingRegistry[RoutingState] {
     Url(state2Url.apply(state))
 
   private val (url2State, state2Url) = bidirectional {
-    case "/" => AnotherState("default")
-    case "/selection" / name => AnotherState(name)
+    case "/" => SceneState("default")
+    case "/selection" / name => SceneState(name)
   }
 }

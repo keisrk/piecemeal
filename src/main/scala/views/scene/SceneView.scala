@@ -1,7 +1,8 @@
-package piecemeal.views
+package piecemeal.views.scene
 
 import piecemeal.facade.twgl.{Constants, M4, TWGL, Primitives}
 import piecemeal.routing.RootState
+import piecemeal.views.{Program, Piece}
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.udash._
@@ -24,10 +25,10 @@ import org.scalajs.dom.window
 
 import scala.scalajs.js
 
-case class AnotherView(model: ModelProperty[AnotherModel], presenter: AnotherPresenter) extends FinalView {
+case class SceneView(model: ModelProperty[SceneModel], presenter: ScenePresenter) extends FinalView {
   import scalatags.JsDom.all._
 
-  println("AnotherView")
+  println("SceneView")
   /* Input components binding rotation/translation. */
   val sceneButton = UdashButton()(i(Glyphicon.play))/*UdashButton.toggle(active = rotated)(
     showIfElse(rotated)(i(Glyphicon.globe).render, i(Glyphicon.move).render))*/

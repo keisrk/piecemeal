@@ -1,7 +1,8 @@
-package piecemeal.views
+package piecemeal.views.scene
 
-import piecemeal.routing.{RootState, RoutingState, AnotherState}
+import piecemeal.routing.{RootState, RoutingState, SceneState}
 import piecemeal.scene._
+import piecemeal.views.{Program, Piece}
 import io.udash._
 
 /* Experimental */
@@ -10,10 +11,11 @@ import piecemeal.facade.twgl.{M4, Primitives, TWGL}
 import scala.scalajs.js
 /* Experimental */
 
-class AnotherViewFactory (
+class SceneViewFactory (
+  name: String,
   renderingService: RenderingContextService,
   sceneService: SceneContextService
-) extends FinalViewFactory[AnotherState] {
+) extends FinalViewFactory[SceneState] {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   /* Experimental --> */
@@ -39,32 +41,11 @@ class AnotherViewFactory (
     Piece("my_conv",Seq("on")),
   )
 
-  val model = ModelProperty(AnotherModel(programs, pieces))
-/*
-  renderingService.reset()
-  sceneService.reset()
-  sceneService.setup(act.getSceneTree)
-
-  setup(act)
-  renderingService.setupDrawInfoList()
-  val transducer = Transducer(js.Array(("my_pnp01", "my_conv_input"), ("my_conv_output", "my_pnp02")))
-  for ((from, to) <- transducer.replacements) sceneService.registerReplace(from, to)
-  /* --> Experimental */
-  println("AnotherVF Init")
-  sceneService.registerStep(Macro("macro",
-    js.Array(
-      (sceneService.getStep("my_cyl"),  On),
-      (sceneService.getStep("my_cyl"), Off),
-      (sceneService.getStep("my_cyl"),  On),
-      (sceneService.getStep("my_cyl"), Off),
-      (sceneService.getStep("my_cyl"),  On),
-      (sceneService.getStep("my_cyl"), Off)
-    )))
- */
-  override def create(): (FinalView, Presenter[AnotherState]) = {
-    println("AnotherVF create")
-    val presenter = new AnotherPresenter(act, model, renderingService, sceneService)
-    val view = new AnotherView(model, presenter)
+  val model = ModelProperty(SceneModel(programs, pieces))
+  override def create(): (FinalView, Presenter[SceneState]) = {
+    println("SceneVF create")
+    val presenter = new ScenePresenter(act, model, renderingService, sceneService)
+    val view = new SceneView(model, presenter)
 
     (view, presenter)
   }
