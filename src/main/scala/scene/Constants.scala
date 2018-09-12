@@ -1,6 +1,7 @@
 package piecemeal.scene
 
 import piecemeal.facade.twgl.{M4, Primitives}
+
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Float32Array
 

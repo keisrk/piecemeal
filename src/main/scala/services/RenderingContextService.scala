@@ -1,7 +1,8 @@
 package piecemeal.services
-
-import piecemeal.facade.twgl.{Constants, M4, TWGL}
-
+import org.scalajs.dom.raw
+import org.scalajs.dom.raw.WebGLProgram
+import piecemeal.facade.twgl.{M4, TWGL}
+import piecemeal.facade.utils.TWGLUtils
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.webgl.RenderingContext
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +20,7 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
   private var renderingContext: Option[RenderingContext] = None  
   private var programInfo: Option[js.Dynamic] = None  
   private var uniforms: Option[js.Dynamic] = None                
-  private val constants = new Constants
+  private val twglUtils = new TWGLUtils
   private val objectList = js.Array[(DrawInfo, Float32Array)]()
   def isDefined: Boolean = renderingContext.isDefined && programInfo.isDefined && uniforms.isDefined
   def currentContext: Option[RenderingContext] = renderingContext
@@ -31,8 +32,8 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
   def getCurrentUniforms: js.Dynamic = uniforms.getOrElse(throw new RuntimeException("Uniforms is yet to be made."))
 
   def translationZ(z: Double): Unit = {
-    //M4.translate(constants.world, js.Array(-0.01 * x, 0.0, 0.0))
-    constants.posZ = 0.01 * z -10.0
+    //M4.translate(twglUtils.world, js.Array(-0.01 * x, 0.0, 0.0))
+    twglUtils.posZ = 0.01 * z -10.0
   }
 
   def reset(): Unit = {
@@ -55,8 +56,8 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
           println("getContext success")
           val ctx = rawCtx.asInstanceOf[RenderingContext]
           renderingContext = Some(ctx)
-          programInfo = Some(TWGL.createProgramInfo(ctx, js.Array(constants.vs, constants.fs)))
-          uniforms = Some(constants.uniforms(ctx))
+          programInfo = Some(TWGL.createProgramInfo(ctx, js.Array(twglUtils.vs, twglUtils.fs)))
+          uniforms = Some(twglUtils.uniforms(ctx))
           setupDrawInfoList()
           ctx
         }
@@ -69,7 +70,7 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
       val drawInfo = js.Dynamic.literal(
         "programInfo" -> getCurrentProgramInfo,
         "bufferInfo" -> bufferInfo,
-        "uniforms" -> constants.cloneUniforms(getCurrentUniforms))
+        "uniforms" -> twglUtils.cloneUniforms(getCurrentUniforms))
       d.set(drawInfo)
     }
   }
@@ -91,15 +92,21 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
 
   def update() = {
     /* Meaningless boilerplate */
-    constants.renderPreamble(getCurrentContext)
-    val (camera, view, viewProjection, world) = constants.renderUniforms(getCurrentContext)
-    getCurrentUniforms.u_viewInverse = constants.camera
-    getCurrentUniforms.u_world = constants.world
-    getCurrentUniforms.u_worldInverseTranspose = M4.transpose(M4.inverse(constants.world))
-    getCurrentUniforms.u_worldViewProjection = M4.multiply(constants.viewProjection, constants.world)
+    twglUtils.renderPreamble(getCurrentContext)
+    val (camera, view, viewProjection, world) = twglUtils.renderUniforms(getCurrentContext)
+    getCurrentUniforms.u_viewInverse = twglUtils.camera
+    getCurrentUniforms.u_world = twglUtils.world
+    getCurrentUniforms.u_worldInverseTranspose = M4.transpose(M4.inverse(twglUtils.world))
+    getCurrentUniforms.u_worldViewProjection = M4.multiply(twglUtils.viewProjection, twglUtils.world)
 
-    syncObjectList(constants.viewProjection)
-
-    TWGL.drawObjectList(getCurrentContext, objectList.map(_._1.get))
+    syncObjectList(twglUtils.viewProjection)
+    objectList.foreach((d) => {
+      val bufferInfo = d._1.get.bufferInfo
+      getCurrentContext.useProgram(getCurrentProgramInfo.program.asInstanceOf[WebGLProgram])
+      TWGL.setBuffersAndAttributes(getCurrentContext, getCurrentProgramInfo, bufferInfo)
+      TWGL.setUniforms(getCurrentProgramInfo, getCurrentUniforms)
+      getCurrentContext.drawElements(raw.WebGLRenderingContext.TRIANGLES, bufferInfo.numElements.asInstanceOf[Int], raw.WebGLRenderingContext.UNSIGNED_SHORT, 0);
+    })
+    //TWGL.drawObjectList(getCurrentContext, objectList.map(_._1.get))
   }
 }

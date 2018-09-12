@@ -1,13 +1,18 @@
-package piecemeal.facade.twgl
+package piecemeal.facade.utils
 
+import scala.collection.mutable.HashMap
 import scala.scalajs.js
-import scala.scalajs.js.typedarray.Float32Array
+import scala.scalajs.js.JSON
+import scala.scalajs.js.typedarray.{Float32Array, Uint16Array}
 
 import org.scalajs.dom
 import org.scalajs.dom.raw
 import org.scalajs.dom.webgl.RenderingContext
 
-class Constants {
+import piecemeal.facade.twgl._
+import piecemeal.facade.csg._
+
+class TWGLUtils {
   var posZ = -10.0
   var camera = M4.identity()
   var view = M4.identity()
@@ -23,8 +28,8 @@ class Constants {
         255, 255, 255, 255,
         192, 192, 192, 255,
         192, 192, 192, 255,
-        255, 255, 255, 255)
-    ))
+        255, 255, 255, 255,
+      )))
 
   def uniforms(gl: RenderingContext): js.Dynamic =
     js.Dynamic.literal(
@@ -142,4 +147,54 @@ void main() {
   gl_FragColor = outColor;
 }
 """
+}
+
+case class Indexer(){
+  val unique: js.Array[js.Dynamic] = js.Array()
+  val map: HashMap[String, Int] = HashMap()
+}
+
+object CSGUtils {
+  def add(idx: Indexer, obj: js.Dynamic): Int = {
+    val key = JSON.stringify(obj)
+    if (!(idx.map contains key)) {
+      idx.map += (key -> idx.unique.length)
+      idx.unique.push(obj)
+    }
+    idx.map(key)
+  }
+  def createCSGVertices(csg: CSG): js.Dynamic = {
+    val indexer = Indexer()
+    val triangles: js.Array[js.Array[Int]] = js.Array()
+    csg.toPolygons.map((polygon) => {
+      val idx: js.Array[Int] = polygon.vertices.map((vertex: js.Dynamic) => { add(indexer, vertex) })
+        .asInstanceOf[js.Array[Int]]
+      for (i <- 2 until idx.length) {
+        triangles.push(js.Array(idx(0), idx(i - 1), idx(i)))
+      }})
+    val numVertices = indexer.unique.length * 3; println(numVertices)
+    val numIndices = triangles.length * 3; println(numIndices)
+    val positions = Primitives.createAugmentedTypedArray(3, numVertices)
+    val normals   = Primitives.createAugmentedTypedArray(3, numVertices)
+    val indices   = Primitives.createAugmentedTypedArray(3, numIndices, Uint16Array)
+    indexer.unique.foreach((vertex) => {
+      positions.push(vertex.pos.x, vertex.pos.y, vertex.pos.z)
+      normals.push(vertex.normal.x, vertex.normal.y, vertex.normal.z)
+    })
+    triangles.foreach((v3) => {
+      indices.push(v3)
+    })
+    js.Dynamic.literal(
+      "position" -> positions,
+      "normal" ->  normals,
+      "indices" -> indices,
+    )
+  }
+  //val cube = CSG.cube()
+  //val u = cube.union(CSG.cube())
+  //val v = createCSGVertices(u)
+  //val c = createCSGVertices(cube)
+  val s = createCSGVertices(CSG.cube().subtract(CSG.sphere()))//createCSGVertices(CSG.cube())//
+  //println(JSON.stringify(u))
+  //println(JSON.stringify(v))
 }

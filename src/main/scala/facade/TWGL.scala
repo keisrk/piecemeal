@@ -2,7 +2,7 @@ package piecemeal.facade.twgl
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSGlobal, ScalaJSDefined}
-import scala.scalajs.js.typedarray.Float32Array
+import scala.scalajs.js.typedarray.{Float32Array, TypedArrayStatic}
 
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.webgl.RenderingContext
@@ -17,6 +17,8 @@ object TWGL extends js.Object {
   def drawObjectList(gl: RenderingContext, objectsToDraw: js.Array[js.Dynamic]): Unit = js.native
   def resizeCanvasToDisplaySize(canvas: Canvas): Boolean = js.native
   def resizeCanvasToDisplaySize(canvas: Canvas, multiplier: Double): Boolean = js.native
+  def setBuffersAndAttributes(gl: RenderingContext, setters: js.Dynamic, buffers: js.Dynamic): Unit = js.native
+  def setUniforms(setters: js.Dynamic, values: js.Dynamic): Unit = js.native
 }
 
 @JSGlobal("twgl.m4")
@@ -47,6 +49,8 @@ object M4 extends js.Object {
 @JSGlobal("twgl.primitives")
 @js.native
 object Primitives extends js.Object {
+  def createAugmentedTypedArray(numComponents: Int, numElements: Int): js.Dynamic = js.native
+  def createAugmentedTypedArray(numComponents: Int, numElements: Int, opt_type: TypedArrayStatic): js.Dynamic = js.native
   def concatVertices(arrays: js.Array[js.Dynamic]): js.Dynamic = js.native
   def createCubeVertices(): js.Dynamic = js.native
   def createCubeVertices(size: Double): js.Dynamic = js.native

@@ -20,7 +20,6 @@ class RootPresenter(
 )(implicit ec: ExecutionContext) extends Presenter[RootState.type]{
 
   override def handleState(state: RootState.type): Unit = {
-//    render()
   }
   def renderingSetup(canvas: html.Canvas): Future[Unit] = {
     renderingService.setup(canvas).map(_ => ()).andThen {

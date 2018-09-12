@@ -230,9 +230,13 @@ case class DefaultConveyor(id: String, location: Float32Array, slots: Int) exten
   val counterPerTik: Double = 1.0
   def increment: Float32Array = M4.translation(js.Array(0.015, 0.0, 0.0))
   def majorVertices: js.Dynamic = {
+    import piecemeal.facade.utils.CSGUtils
+    CSGUtils.s
+/*
     val v = Primitives.createCubeVertices(1.0)
     Primitives.reorientVertices(v, M4.scaling(js.Array(3.0, 0.1, 1.0)))
     v
+*/
   }
 }
 case class OldDefaultConveyor(id: String, location: Float32Array, slots: Int) extends Actuator {
