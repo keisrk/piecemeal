@@ -18,5 +18,5 @@ class CSG() extends js.Object {
 object CSG extends js.Object {
   override def clone(): CSG = js.native
   def cube(): CSG = js.native
-  def sphere(): CSG = js.native
+  def sphere(option: js.Dynamic): CSG = js.native
 }

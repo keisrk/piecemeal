@@ -176,6 +176,7 @@ object CSGUtils {
     val numIndices = triangles.length * 3; println(numIndices)
     val positions = Primitives.createAugmentedTypedArray(3, numVertices)
     val normals   = Primitives.createAugmentedTypedArray(3, numVertices)
+    val texcoords = Primitives.createAugmentedTypedArray(2, numVertices)
     val indices   = Primitives.createAugmentedTypedArray(3, numIndices, Uint16Array)
     indexer.unique.foreach((vertex) => {
       positions.push(vertex.pos.x, vertex.pos.y, vertex.pos.z)
@@ -187,14 +188,9 @@ object CSGUtils {
     js.Dynamic.literal(
       "position" -> positions,
       "normal" ->  normals,
+      "texcoord" -> texcoords,
       "indices" -> indices,
     )
   }
-  //val cube = CSG.cube()
-  //val u = cube.union(CSG.cube())
-  //val v = createCSGVertices(u)
-  //val c = createCSGVertices(cube)
-  val s = createCSGVertices(CSG.cube().subtract(CSG.sphere()))//createCSGVertices(CSG.cube())//
-  //println(JSON.stringify(u))
-  //println(JSON.stringify(v))
+  val s = createCSGVertices(CSG.cube().subtract(CSG.sphere(js.Dynamic.literal("radius" -> 1.3))))
 }

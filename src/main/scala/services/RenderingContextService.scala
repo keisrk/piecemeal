@@ -32,7 +32,6 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
   def getCurrentUniforms: js.Dynamic = uniforms.getOrElse(throw new RuntimeException("Uniforms is yet to be made."))
 
   def translationZ(z: Double): Unit = {
-    //M4.translate(twglUtils.world, js.Array(-0.01 * x, 0.0, 0.0))
     twglUtils.posZ = 0.01 * z -10.0
   }
 
@@ -100,13 +99,6 @@ class RenderingContextService()(implicit ec: ExecutionContext) {
     getCurrentUniforms.u_worldViewProjection = M4.multiply(twglUtils.viewProjection, twglUtils.world)
 
     syncObjectList(twglUtils.viewProjection)
-    objectList.foreach((d) => {
-      val bufferInfo = d._1.get.bufferInfo
-      getCurrentContext.useProgram(getCurrentProgramInfo.program.asInstanceOf[WebGLProgram])
-      TWGL.setBuffersAndAttributes(getCurrentContext, getCurrentProgramInfo, bufferInfo)
-      TWGL.setUniforms(getCurrentProgramInfo, getCurrentUniforms)
-      getCurrentContext.drawElements(raw.WebGLRenderingContext.TRIANGLES, bufferInfo.numElements.asInstanceOf[Int], raw.WebGLRenderingContext.UNSIGNED_SHORT, 0);
-    })
-    //TWGL.drawObjectList(getCurrentContext, objectList.map(_._1.get))
+    TWGL.drawObjectList(getCurrentContext, objectList.map(_._1.get))
   }
 }
