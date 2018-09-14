@@ -5,7 +5,7 @@ import io.udash._
 case class RootModel(programs: Seq[Program], pieces: Seq[Piece])
 object RootModel extends HasModelPropertyCreator[RootModel]
 case class Program(id: Int)
-object Program extends HasModelPropertyCreator[Program]
+object Program extends HasModelPropertyCreator[Program] 
 
 case class Piece(id: String, commands: Seq[String])
 object Piece extends HasModelPropertyCreator[Piece]

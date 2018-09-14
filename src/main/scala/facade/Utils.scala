@@ -26,9 +26,12 @@ class TWGLUtils {
       "src" -> 
       js.Array(
         255, 255, 255, 255,
+/*
+        255, 255, 255, 255,
         192, 192, 192, 255,
         192, 192, 192, 255,
         255, 255, 255, 255,
+ */
       )))
 
   def uniforms(gl: RenderingContext): js.Dynamic =
@@ -192,5 +195,16 @@ object CSGUtils {
       "indices" -> indices,
     )
   }
-  val s = createCSGVertices(CSG.cube().subtract(CSG.sphere(js.Dynamic.literal("radius" -> 1.3))))
+  val txt = js.Dynamic.global.data.asInstanceOf[String]
+  val data = js.JSON.parse(txt).asInstanceOf[js.Array[js.Dynamic]]
+  val plg = createCSGVertices(CSG.fromPolygons(
+    for (polygon <- data) yield {new CSG.Polygon(
+      for (vertex <- polygon.polygon.asInstanceOf[js.Array[js.Dynamic]]) yield {
+        val pos = vertex.pos.asInstanceOf[js.Array[Double]]
+        val normal = vertex.normal.asInstanceOf[js.Array[Double]]
+        new CSG.Vertex(
+          new CSG.Vector(pos(0), pos(1), pos(2)),
+          new CSG.Vector(normal(0), normal(1), normal(2)))
+      })
+    }))
 }

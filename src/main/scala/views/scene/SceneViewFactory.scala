@@ -2,21 +2,27 @@ package piecemeal.views.scene
 
 import piecemeal.routing.{RootState, RoutingState, SceneState}
 import piecemeal.scene._
+import piecemeal.services.{RenderingContextService, SceneContextService}
 import piecemeal.views.{Program, Piece}
 import io.udash._
 
 /* Experimental */
-import piecemeal.services.{RenderingContextService, SceneContextService}
 import piecemeal.facade.twgl.{M4, Primitives, TWGL}
 import scala.scalajs.js
 /* Experimental */
-
 class SceneViewFactory (
   name: String,
   renderingService: RenderingContextService,
-  sceneService: SceneContextService
+  sceneService: SceneContextService,
+  modelDB: ModelDB
 ) extends FinalViewFactory[SceneState] {
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  def setup(a: Actuator): Unit = {
+    for (step <- a.getSteps) sceneService.registerStep(step)
+    for ((v, m) <- a.getRenderingInfo) renderingService.register(v, m)
+    for (c <- a.children) setup(c)
+  }
 
   /* Experimental --> */
   val mgqLoc = M4.multiply(M4.translation(js.Array(0.0, 1.0, 0.0)), M4.rotationZ(90 * Math.PI / 180))
@@ -40,11 +46,15 @@ class SceneViewFactory (
     Piece("my_servo", Seq("0", "1", "2")),
     Piece("my_conv",Seq("on")),
   )
-
   val model = ModelProperty(SceneModel(programs, pieces))
   override def create(): (FinalView, Presenter[SceneState]) = {
     println("SceneVF create")
-    val presenter = new ScenePresenter(act, model, renderingService, sceneService)
+    renderingService.reset()
+    sceneService.reset()
+    sceneService.setup(act.getSceneTree)
+    setup(act)
+
+    val presenter = new ScenePresenter(model, renderingService, sceneService)
     val view = new SceneView(model, presenter)
 
     (view, presenter)

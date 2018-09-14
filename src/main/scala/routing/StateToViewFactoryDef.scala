@@ -9,6 +9,7 @@ class StatesToViewFactoryDef extends ViewFactoryRegistry[RoutingState] {
   def matchStateToResolver(state: RoutingState): ViewFactory[_ <: RoutingState] =
     state match {
       case RootState => new RootViewFactory(ApplicationContext.renderService, ApplicationContext.sceneService)
-      case SceneState(name) => new SceneViewFactory(name, ApplicationContext.renderService, ApplicationContext.sceneService)
+      case SceneState(name) =>
+        new SceneViewFactory(name, ApplicationContext.renderService, ApplicationContext.sceneService, ApplicationContext.modelDB)
     }
 }

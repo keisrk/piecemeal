@@ -21,25 +21,14 @@ import scala.scalajs.js
 /* Experimental */
 
 class ScenePresenter(
-  act: Actuator,
   model: ModelProperty[SceneModel],
   val renderingService: RenderingContextService,
   val sceneService: SceneContextService
 )(implicit ec: ExecutionContext) extends Presenter[SceneState] {
 
-  def setup(a: Actuator): Unit = {
-    for (step <- a.getSteps) sceneService.registerStep(step)
-    for ((v, m) <- a.getRenderingInfo) renderingService.register(v, m)
-    for (c <- a.children) setup(c)
-  }
-
   override def handleState(state: SceneState): Unit = state match {
     case SceneState(name) => {
       println(name);
-      renderingService.reset()
-      sceneService.reset()
-      sceneService.setup(act.getSceneTree)
-      setup(act)
     }
   }
 

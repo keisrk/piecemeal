@@ -1,13 +1,13 @@
 package piecemeal.views
 
-import piecemeal.facade.twgl.{Constants, M4, TWGL, Primitives}
+import piecemeal.facade.twgl.{M4, TWGL, Primitives}
 import piecemeal.routing.RootState
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.udash._
 import io.udash.css.CssView._
 import io.udash.bootstrap.{UdashBootstrap, BootstrapStyles}
-import io.udash.bootstrap.button._//UdashButton
+import io.udash.bootstrap.button._
 import io.udash.bootstrap.collapse.UdashCollapse
 import io.udash.bootstrap.navs.UdashNav
 import io.udash.bootstrap.panel.UdashPanel
@@ -82,6 +82,7 @@ display: block;
   rotateY.listen((y: Double) => {
     presenter.sceneService.rotationY(y)
   })
+
   override def getTemplate: Modifier = {
     div(BootstrapStyles.containerFluid)(
       div()(
