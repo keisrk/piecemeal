@@ -83,7 +83,8 @@ case class Stack(id: String, children: js.Array[Leaf]) extends SceneTree {
   val worldMatrix = M4.identity()
   private val localMatrix = M4.identity()
   def getId = id
-  def popChild(): Option[Leaf] = if (children.length == 0) None else Some(children.pop())
+  def length = children.length
+  def popChild(): Option[Leaf] = /*if (children.length == 0) None else*/ Some(children.pop())
   def pushChild(c: Leaf): Unit = children.push(c)
   def setParent(p: Node): Unit = {
     p.children.push(this)
@@ -232,18 +233,19 @@ case class Shift(id: String, st: SceneTree, countPerTik: Double, positions: js.A
 case class StackOp(id: String, stack: Stack, ph: PlaceHolder) extends Step {
   val channel = Channel()
   channel.done()
+
   def getId: String = id
   def tik(): Unit = {}
   def exec(cmd: Command): Future[Boolean] = {
 
     cmd match {
       case On => (stack.popChild(), ph.currentChild) match {
-        case (Some(c), None) => {ph.pushChild(Some(c));     println(ph.getId)}
-        case (Some(c), Some(_)) => stack.pushChild(c)
+        case (Some(c), None) => {ph.pushChild(Some(c)); println(stack.length)}
+        case (Some(c), Some(_)) => {stack.pushChild(c); println(stack.length)}
         case _ =>  {}
       }
-      case Off => ph.currentChild match {
-        case Some(c) => stack.pushChild(c)
+      case _ => ph.currentChild match {
+        case Some(c) => {stack.pushChild(ph.popChild().get)}
         case None => {}
       }}
     Future { true }
@@ -278,6 +280,7 @@ case class Jog(id: String, st: SceneTree, countPerTik: Double, increment: Float3
   private[this] var count = 0.0
   val channel = Channel()
   def tik(): Unit = {
+
     if (!channel.isCompleted()){
       if (count < 1.0) {
         count += countPerTik
@@ -314,7 +317,7 @@ case class Macro(id: String, steps: js.Array[(Step, Command)]) extends Step {
         i = 0
         println("done")
         channel.done()
-      }
+      } 
     }
   }
   def exec(cmd: Command = On): Future[Boolean] = {

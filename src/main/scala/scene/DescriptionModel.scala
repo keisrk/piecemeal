@@ -16,20 +16,19 @@ trait Description {
  * motion for each node in the SceneTree. Transducer specifies the leaf
  * replacement of the SceneTree */
 
-abstract class Environment {
-  /* Subclass may take these parameters. */
-  def id: String
-  def children: js.Array[Actuator]
+class Environment (
+  id: String = "Environment",
+  val replaceSpec: js.Array[(String, String)],
+  val macroSpec: js.Array[(String, js.Array[(String, Command)])],
+  val ioPhs: js.Array[String],
+  val children: js.Array[Actuator]){
+  import piecemeal.services.ModelDB
+  def workVertices: js.Dynamic = ModelDB.getPolygonVertices("vialbottle")
 
-  /* Subclass determines the following properties. */
-  def workVertices: js.Dynamic
-  def replaceSpec: js.Array[(String, String)]
-  def macroSpec: js.Array[(String, js.Array[(String, Command)])]
-  def ioPhs: js.Array[String]
   /* Class instantiation. */
   private val majorSt = Node()
   private val works = js.Array[Leaf]()
-  val stack: Stack = Stack("depo", works)
+
 
   for (c  <- children) c.getSceneTree match {
     case n: Node => n.setParent(majorSt)
@@ -41,23 +40,13 @@ abstract class Environment {
 
   for (i <- 0 until 10) {
     val work = Leaf()
-    work.updateLocalMatrix(M4.translation(js.Array(3.0, i * 1.2, 0.0)))
+    //work.updateLocalMatrix(M4.translation(js.Array(3.0, i * 1.2, 0.0)))
     works.push(work)
     getRenderingInfo.push((workVertices, work.worldMatrix))
   }
+  val stack: Stack = Stack("depo", works)
   stack.setParent(majorSt)
   val getSceneTree: SceneTree = majorSt
-}
-
-case class DefaultEnvironment(
-  id: String = "Environment",
-  replaceSpec: js.Array[(String, String)],
-  macroSpec: js.Array[(String, js.Array[(String, Command)])],
-  ioPhs: js.Array[String],
-  val children: js.Array[Actuator])
-    extends Environment {
-  import piecemeal.services.ModelDB
-  def workVertices: js.Dynamic = ModelDB.getPolygonVertices("vialbottle")
 }
 
 case class Transducer(replacements: js.Array[(String, String)])
@@ -68,6 +57,7 @@ trait Actuator {
   def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)]
   def children: js.Array[Actuator]
 }
+
 abstract class Cylinder extends Actuator {
   /* Subclass may take these parameters. */
   def id: String                   
@@ -170,7 +160,11 @@ case class DefaultServoMotor(id: String, location: Float32Array, positions: js.A
   def decrement = M4.translation(js.Array(0, -1 * rangePerTik, 0))
 
   def majorVertices = Primitives.createCubeVertices()
-  def minorVertices = Primitives.createCubeVertices()
+  def minorVertices = {
+    val v = Primitives.createCubeVertices()
+    Primitives.reorientVertices(v, M4.scaling(js.Array(0.5, 1.0, 0.5)))
+    v
+  }
 }
 
 case class DefaultRotateServoMotor(id: String, location: Float32Array, positions: js.Array[Double],
@@ -214,17 +208,18 @@ case class DefaultPickAndPlace(id: String, location: Float32Array) extends PickA
   def majorVertices = Primitives.createCubeVertices(0.1)
 }
 
-abstract class Conveyor extends Actuator {
+class Conveyor(val id: String, location: Float32Array, slots: Int) extends Actuator {
   /* A subclass may take these parameters. */
+/*
   def id: String
   def location: Float32Array
   def slots: Int
-
+ */
   /* A subclass determines the following properties. */
-  def margin: Double
-  def counterPerTik: Double
-  def increment: Float32Array
-  def majorVertices: js.Dynamic
+  def margin: Double = 1.5
+  def counterPerTik: Double = 0.1
+  def increment: Float32Array = M4.translation(js.Array(0.15, 0.0, 0.0))
+  def majorVertices: js.Dynamic = Primitives.createPlaneVertices(1.0, 2.0)
 
   /* Class instantiation. */
   val children: js.Array[Actuator] = js.Array()
@@ -251,21 +246,33 @@ abstract class Conveyor extends Actuator {
   val init: Init = Init(id ++ "_init", middleSt)
 
   def getSceneTree: SceneTree = majorSt
-  def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = {
+  def getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = 
+
+ {
+    val out = js.Array[(js.Dynamic, Float32Array)]()
+    for (i <- 0 until slots) out.push((Primitives.createSphereVertices(0.3, 24, 12), phs(i).worldMatrix))
+    out
+  }
+/*
+  {
     js.Array(
       (majorVertices, majorSt.worldMatrix))
   }
+ */
   def getSteps: js.Array[Step] = {
-    val out = js.Array[Step](jog, init, Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
-    out
+    js.Array[Step](jog, init, Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
   }
 }
+/*
 case class DefaultConveyor(id: String, location: Float32Array, slots: Int) extends Conveyor {
-  val margin: Double = 1.5
-  val counterPerTik: Double = 1.0
-  def increment: Float32Array = M4.translation(js.Array(0.5, 0.0, 0.0))
+//  val margin: Double = 1.5
+//  val counterPerTik: Double = 0.5
+//  def increment: Float32Array = M4.translation(js.Array(0.15, 0.0, 0.0))
+
   def majorVertices: js.Dynamic = {
     val v = Primitives.createPlaneVertices(1.0, 2.0)
     v
   }
+
 }
+ */
