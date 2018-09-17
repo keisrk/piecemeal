@@ -2,7 +2,7 @@ package piecemeal.views.scene
 
 import piecemeal.routing.{RootState, RoutingState, SceneState}
 import piecemeal.scene._
-import piecemeal.services.{RenderingContextService, SceneContextService}
+import piecemeal.services.{RenderingContextService, SceneContextService, ModelDB}
 import piecemeal.views.{Program, Piece}
 import io.udash._
 
@@ -18,10 +18,19 @@ class SceneViewFactory (
 ) extends FinalViewFactory[SceneState] {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def setup(a: Actuator): Unit = {
+  def setup(e: Environment): Unit = {
+    for (c <- e.children) setupActuator(c)
+    for ((v, m) <- e.getRenderingInfo) renderingService.register(v, m)
+
+    for (ph <- e.ioPhs) sceneService.registerStackOp(e.stack, ph)
+    for ((fromId, toId) <- e.replaceSpec) sceneService.registerReplace(fromId, toId)
+    for ((stepId, cmd) <- e.macroSpec) sceneService.registerMacro(stepId, cmd)
+
+  }
+  def setupActuator(a: Actuator): Unit = {
     for (step <- a.getSteps) sceneService.registerStep(step)
     for ((v, m) <- a.getRenderingInfo) renderingService.register(v, m)
-    for (c <- a.children) setup(c)
+    for (c <- a.children) setupActuator(c)
   }
 
   /* Experimental --> */
@@ -29,22 +38,26 @@ class SceneViewFactory (
   val pnp01Loc = M4.translation(js.Array( 1.0, 0.0, 0.0))
   val pnp02Loc = M4.translation(js.Array(-1.0, 0.0, 0.0))
   val convLoc = M4.translation(js.Array(2.0, 1.0, 0.0))
-  val act = /*new Environment(children = js.Array(*/
-    new MGQ("my_cyl", M4.identity(), js.Array(
+  val act = DefaultEnvironment(
+    replaceSpec = js.Array(),
+    macroSpec = js.Array((("macro"), js.Array(("depomy_conv_input", On), ("my_cyl", On), ("my_cyl", Off), ("my_cyl", On), ("my_cyl", Off), ("depomy_conv_output", Off)))),
+    ioPhs = js.Array("my_conv_input", "my_conv_output"),
+    children = js.Array(
+      new MGQ("my_cyl", M4.identity(), js.Array(
+      )),
       DefaultServoMotor("my_servo", mgqLoc, js.Array(-1.0, 0.3, 1.2), js.Array(
         DefaultPickAndPlace("my_pnp01", pnp01Loc),
         DefaultPickAndPlace("my_pnp02", pnp02Loc),
-        DefaultConveyor("my_conv", convLoc, 5),
-      ))
-    ))//))
-
+      )),
+      DefaultConveyor("my_conv", convLoc, 5),
+    ))
   val programs = Seq[Program](
     Program(0)
   )
   val pieces = Seq[Piece](
     Piece("my_cyl",   Seq("on", "off")),
     Piece("my_servo", Seq("0", "1", "2")),
-    Piece("my_conv",Seq("on")),
+    Piece("my_conv",  Seq("on")),
   )
   val model = ModelProperty(SceneModel(programs, pieces))
   override def create(): (FinalView, Presenter[SceneState]) = {
@@ -54,6 +67,8 @@ class SceneViewFactory (
     sceneService.setup(act.getSceneTree)
     setup(act)
 
+    /* ModelDB */
+    modelDB.setup()
     val presenter = new ScenePresenter(model, renderingService, sceneService)
     val view = new SceneView(model, presenter)
 

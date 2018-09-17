@@ -1,6 +1,6 @@
 package piecemeal.views.scene
 
-import piecemeal.facade.twgl.{Constants, M4, TWGL, Primitives}
+import piecemeal.facade.twgl.{M4, TWGL, Primitives}
 import piecemeal.routing.RootState
 import piecemeal.views.{Program, Piece}
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +44,7 @@ case class SceneView(model: ModelProperty[SceneModel], presenter: ScenePresenter
       stopButton.render,
     ).render,
     UdashButtonGroup()(
-      sceneButton.render,
+      //sceneButton.render,
     ).render,
   )
 

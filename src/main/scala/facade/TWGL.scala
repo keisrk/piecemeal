@@ -55,6 +55,7 @@ object Primitives extends js.Object {
   def createCubeVertices(): js.Dynamic = js.native
   def createCubeVertices(size: Double): js.Dynamic = js.native
   def createCylinderVertices(radius: Double, height: Double, radialSubdivisions: Int, verticalSubdivisions: Int): js.Dynamic = js.native
+  def createPlaneVertices(width: Double, depth: Double): js.Dynamic = js.native
   def createSphereVertices(radius: Double, subdivisionsAxis: Int, subdivisionsHeight: Int): js.Dynamic = js.native
   def duplicateVertices(arrays: js.Dynamic): js.Dynamic = js.native
   def reorientVertices(arrays: js.Dynamic, matrix: Float32Array): js.Dynamic = js.native

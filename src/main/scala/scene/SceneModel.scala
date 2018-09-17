@@ -1,7 +1,7 @@
 package piecemeal.scene
 
 import io.udash._
-import piecemeal.facade.twgl.{Constants, TWGL, M4, Primitives}
+import piecemeal.facade.twgl.{TWGL, M4, Primitives}
 
 import org.scalajs.dom.webgl
 
@@ -79,7 +79,28 @@ case class Leaf() extends SceneTree {
     M4.multiply(pWorldMatrix, this.localMatrix, this.worldMatrix)
   }
 }
+case class Stack(id: String, children: js.Array[Leaf]) extends SceneTree {
+  val worldMatrix = M4.identity()
+  private val localMatrix = M4.identity()
+  def getId = id
+  def popChild(): Option[Leaf] = if (children.length == 0) None else Some(children.pop())
+  def pushChild(c: Leaf): Unit = children.push(c)
+  def setParent(p: Node): Unit = {
+    p.children.push(this)
+  }
+  def initMatrix(): Unit = {M4.identity(localMatrix)}
 
+  def updateLocalMatrix(m: Float32Array): Unit = {
+    M4.multiply(this.localMatrix, m, this.localMatrix)
+  }
+  def updateWorldMatrix(pWorldMatrix: Float32Array): Unit = {
+    M4.multiply(pWorldMatrix, this.localMatrix, this.worldMatrix)
+
+    for (c <- children) {
+      c.updateWorldMatrix(this.worldMatrix)
+    }
+  }
+}
 case class PlaceHolder(id: String) extends SceneTree {
   private var child: Option[Leaf] = None
   val worldMatrix = M4.identity()
@@ -208,7 +229,26 @@ case class Shift(id: String, st: SceneTree, countPerTik: Double, positions: js.A
     case _ => Future {true}
   }
 }
+case class StackOp(id: String, stack: Stack, ph: PlaceHolder) extends Step {
+  val channel = Channel()
+  channel.done()
+  def getId: String = id
+  def tik(): Unit = {}
+  def exec(cmd: Command): Future[Boolean] = {
 
+    cmd match {
+      case On => (stack.popChild(), ph.currentChild) match {
+        case (Some(c), None) => {ph.pushChild(Some(c));     println(ph.getId)}
+        case (Some(c), Some(_)) => stack.pushChild(c)
+        case _ =>  {}
+      }
+      case Off => ph.currentChild match {
+        case Some(c) => stack.pushChild(c)
+        case None => {}
+      }}
+    Future { true }
+  }
+}
 case class Replace(id: String, from: PlaceHolder, to: PlaceHolder) extends Step {
   val channel = Channel()
   channel.done()

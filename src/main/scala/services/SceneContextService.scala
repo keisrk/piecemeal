@@ -1,6 +1,6 @@
 package piecemeal.services
-import piecemeal.facade.twgl.{Constants, M4, TWGL}
-import piecemeal.scene.{SceneTree, Leaf, Node, PlaceHolder, Step, Replace, On, Off, Move, Command}
+import piecemeal.facade.twgl.{M4, TWGL}
+import piecemeal.scene.{SceneTree, Leaf, Node, PlaceHolder, Stack, Step, Replace, StackOp, Macro, On, Off, Move, Command}
 import scala.scalajs.js.typedarray.Float32Array
 import scala.collection.mutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,7 +41,6 @@ class SceneContextService()(implicit ec: ExecutionContext){
     }
   }
 
-
   def update(): Unit = {
     stepMap.values.foreach(_.tik())
     getCurrentContext.updateWorldMatrix(worldMatrix)
@@ -52,9 +51,20 @@ class SceneContextService()(implicit ec: ExecutionContext){
     case l: Leaf => {}
     case n: Node => for (c <- n.children) collectPlaceHolder(c)
     case p: PlaceHolder => registerPlaceHolder(p)
+    case st: Stack => {}
   }
   def registerStep(step: Step): Unit = stepMap.+=((step.getId, step))
   def getStep(id: String): Step = stepMap(id)
+
+  def registerStackOp(stack: Stack, ph: String): Unit = {
+    val st = StackOp(stack.id ++ ph, stack, getPlaceHolder(ph))
+    registerStep(st)
+  }
+
+  def registerMacro(id: String, commands: js.Array[(String, Command)]): Unit = {
+    val steps = for ((stepId, cmd) <- commands) yield { (getStep(stepId), cmd) }
+    registerStep(Macro(id, steps))
+  }
 
   def registerReplace(fromId: String, toId: String): Unit = {
     val r = Replace(fromId ++ "_" ++ toId, getPlaceHolder(fromId), getPlaceHolder(toId))

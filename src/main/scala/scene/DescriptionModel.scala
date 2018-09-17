@@ -16,30 +16,50 @@ trait Description {
  * motion for each node in the SceneTree. Transducer specifies the leaf
  * replacement of the SceneTree */
 
-case class Environment(id:String = "Environment", children: js.Array[Actuator])
-    extends Description {
+abstract class Environment {
+  /* Subclass may take these parameters. */
+  def id: String
+  def children: js.Array[Actuator]
 
+  /* Subclass determines the following properties. */
+  def workVertices: js.Dynamic
+  def replaceSpec: js.Array[(String, String)]
+  def macroSpec: js.Array[(String, js.Array[(String, Command)])]
+  def ioPhs: js.Array[String]
+  /* Class instantiation. */
   private val majorSt = Node()
-  private val entryPoint = PlaceHolder("entry_point")
-  private val endPoint = PlaceHolder("end_point")
   private val works = js.Array[Leaf]()
+  val stack: Stack = Stack("depo", works)
 
   for (c  <- children) c.getSceneTree match {
     case n: Node => n.setParent(majorSt)
     case p: PlaceHolder => p.setParent(majorSt)
     case _ => {}
   }
-  def getSceneTree: SceneTree = majorSt
 
   val getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = js.Array()
 
   for (i <- 0 until 10) {
     val work = Leaf()
-    work.updateLocalMatrix(M4.translation(js.Array(10.0, i * 0.5, 0.0)))
+    work.updateLocalMatrix(M4.translation(js.Array(3.0, i * 1.2, 0.0)))
     works.push(work)
-    getRenderingInfo.push((Primitives.createCubeVertices(0.3), work.worldMatrix))
+    getRenderingInfo.push((workVertices, work.worldMatrix))
   }
+  stack.setParent(majorSt)
+  val getSceneTree: SceneTree = majorSt
 }
+
+case class DefaultEnvironment(
+  id: String = "Environment",
+  replaceSpec: js.Array[(String, String)],
+  macroSpec: js.Array[(String, js.Array[(String, Command)])],
+  ioPhs: js.Array[String],
+  val children: js.Array[Actuator])
+    extends Environment {
+  import piecemeal.services.ModelDB
+  def workVertices: js.Dynamic = ModelDB.getPolygonVertices("vialbottle")
+}
+
 case class Transducer(replacements: js.Array[(String, String)])
 trait Actuator {
   def id: String
@@ -153,6 +173,19 @@ case class DefaultServoMotor(id: String, location: Float32Array, positions: js.A
   def minorVertices = Primitives.createCubeVertices()
 }
 
+case class DefaultRotateServoMotor(id: String, location: Float32Array, positions: js.Array[Double],
+  children: js.Array[Actuator]) extends ServoMotor {
+  def rangePerCycle = 90
+  def tikPerCycle = 30
+  private val rangePerTik = rangePerCycle / tikPerCycle.toDouble
+
+  def increment = M4.rotationY(rangePerTik)
+  def decrement = M4.rotationY(-1 * rangePerTik)
+
+  def majorVertices = Primitives.createCubeVertices()
+  def minorVertices = Primitives.createCubeVertices()
+}
+
 abstract class PickAndPlace extends Actuator {
   /* A subclass may take these parameters. */
   def id: String
@@ -222,64 +255,17 @@ abstract class Conveyor extends Actuator {
     js.Array(
       (majorVertices, majorSt.worldMatrix))
   }
-  def getSteps: js.Array[Step] = js.Array(jog, init,
-    Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
+  def getSteps: js.Array[Step] = {
+    val out = js.Array[Step](jog, init, Macro(id, js.Array((jog, On)) ++ steps ++ js.Array((init, On))))
+    out
+  }
 }
 case class DefaultConveyor(id: String, location: Float32Array, slots: Int) extends Conveyor {
   val margin: Double = 1.5
   val counterPerTik: Double = 1.0
-  def increment: Float32Array = M4.translation(js.Array(0.015, 0.0, 0.0))
+  def increment: Float32Array = M4.translation(js.Array(0.5, 0.0, 0.0))
   def majorVertices: js.Dynamic = {
-    import piecemeal.facade.utils.CSGUtils
-    CSGUtils.plg
-/*
-    val v = Primitives.createCubeVertices(1.0)
-    Primitives.reorientVertices(v, M4.scaling(js.Array(3.0, 0.1, 1.0)))
+    val v = Primitives.createPlaneVertices(1.0, 2.0)
     v
-*/
   }
-}
-case class OldDefaultConveyor(id: String, location: Float32Array, slots: Int) extends Actuator {
-
-  val children: js.Array[Actuator] = js.Array()
-  val majorSt = Node()
-  majorSt.updateLocalMatrix(location)
-
-  val middleSt = Node()
-  middleSt.setParent(majorSt)
-
-  val jog: Jog = Jog(id ++ "_jog" , middleSt, 0.05, M4.translation(js.Array(0.015, 0.0, 0.0)))
-  val init: Init = Init(id ++ "_init", middleSt)
-  val macroSteps = js.Array[(Step, Command)] ()
-
-  val getRenderingInfo: js.Array[(js.Dynamic, Float32Array)] = js.Array()
-
-  val inputPh = PlaceHolder(id ++ "_input")
-  inputPh.setParent(middleSt)
-
-  val outputPh = PlaceHolder(id ++ "_output")
-  outputPh.setParent(majorSt)
-
-  macroSteps.push((init, On))
-
-  var fromPh: Option[PlaceHolder] = Some(inputPh)
-
-  for (i <- 0 until (slots)) {
-    if (i == slots -1) {
-      outputPh.updateLocalMatrix(M4.translation(js.Array(0.3 * (i + 2), 0.0, 0.0)))
-    }
-    val toPh = PlaceHolder(id ++ "_slot" ++ (i + 1).toString)
-    toPh.setParent(middleSt)
-
-    toPh.updateLocalMatrix(M4.translation(js.Array(0.3 * (i + 1), 0.0, 0.0)))
-
-    macroSteps.push((Replace(id ++ "_slot" ++ i.toString, fromPh.get, toPh), On))
-    //getRenderingInfo.push((Primitives.createSphereVertices(0.05, 12, 12), toPh.worldMatrix))
-    fromPh = Some(toPh)
-  }
-  macroSteps.push((Replace(id ++ "_output", fromPh.get, outputPh), On))
-  macroSteps.push((jog, On))
-
-  def getSceneTree: SceneTree = majorSt
-  def getSteps: js.Array[Step] = js.Array(jog, init, Macro(id, macroSteps.reverse))
 }

@@ -1,8 +1,7 @@
 package piecemeal
 
 import piecemeal.routing.{RoutingRegistryDef, RoutingState, StatesToViewFactoryDef}
-import piecemeal.services.{RenderingContextService, SceneContextService}
-import piecemeal.scene.ModelDB
+import piecemeal.services.{RenderingContextService, SceneContextService, ModelDB}
 
 import io.udash._
 

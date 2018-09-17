@@ -6,6 +6,7 @@ import scala.scalajs.js.JSON
 import scala.scalajs.js.typedarray.{Float32Array, Uint16Array}
 
 import org.scalajs.dom
+import org.scalajs.dom.document
 import org.scalajs.dom.raw
 import org.scalajs.dom.webgl.RenderingContext
 
@@ -26,12 +27,6 @@ class TWGLUtils {
       "src" -> 
       js.Array(
         255, 255, 255, 255,
-/*
-        255, 255, 255, 255,
-        192, 192, 192, 255,
-        192, 192, 192, 255,
-        255, 255, 255, 255,
- */
       )))
 
   def uniforms(gl: RenderingContext): js.Dynamic =
@@ -77,10 +72,9 @@ class TWGLUtils {
     val target = js.Array(0.0, 0.0, 0.0)
     val up = js.Array(0.0, 1.0, 0.0)
 
-    /*val*/ camera = M4.lookAt(eye, target, up)
-    /*val*/ view = M4.inverse(camera)
-    /*val*/ viewProjection = M4.multiply(projection, view)
-    /*val*/ //world = M4.identity()
+    camera = M4.lookAt(eye, target, up)
+    view = M4.inverse(camera)
+    viewProjection = M4.multiply(projection, view)
     (camera, view, viewProjection, world)
   }
 
@@ -175,8 +169,8 @@ object CSGUtils {
       for (i <- 2 until idx.length) {
         triangles.push(js.Array(idx(0), idx(i - 1), idx(i)))
       }})
-    val numVertices = indexer.unique.length * 3; println(numVertices)
-    val numIndices = triangles.length * 3; println(numIndices)
+    val numVertices = indexer.unique.length * 3
+    val numIndices = triangles.length * 3
     val positions = Primitives.createAugmentedTypedArray(3, numVertices)
     val normals   = Primitives.createAugmentedTypedArray(3, numVertices)
     val texcoords = Primitives.createAugmentedTypedArray(2, numVertices)
@@ -195,8 +189,10 @@ object CSGUtils {
       "indices" -> indices,
     )
   }
+  /* Erased soon.
   val txt = js.Dynamic.global.data.asInstanceOf[String]
   val data = js.JSON.parse(txt).asInstanceOf[js.Array[js.Dynamic]]
+
   val plg = createCSGVertices(CSG.fromPolygons(
     for (polygon <- data) yield {new CSG.Polygon(
       for (vertex <- polygon.polygon.asInstanceOf[js.Array[js.Dynamic]]) yield {
@@ -207,4 +203,5 @@ object CSGUtils {
           new CSG.Vector(normal(0), normal(1), normal(2)))
       })
     }))
+   */
 }
